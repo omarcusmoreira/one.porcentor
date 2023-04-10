@@ -1,20 +1,45 @@
 import { Dispatch, SetStateAction } from 'react'
 
-function weeksPassed(inputDate: string) {
-  const differenceInMs = Date.now() - new Date(inputDate).getTime()
-  const weeks = Math.floor(differenceInMs / (1000 * 60 * 60 * 24 * 7))
-  return weeks
-}
-
 export type Thabits = {
   id: string
   name: string
-  frequency: number
   completed: number
   createdAt: string
   updatedAt: string
+  startDate: string
   hasUpdatedToday: boolean
+  weeklyFrequency: string[]
 }
+
+function countOccurrences(habit: Thabits) {
+  const today = new Date().getTime()
+
+  const startDate = new Date(habit.startDate).getTime()
+  let occurrences = 0
+  console.log('hoje é ' + today)
+  console.log('inicio do ciclo ' + startDate)
+  if (startDate > today) {
+    // habit hasn't started yet
+    console.log('não começou')
+    return 0
+  }
+
+  const daysSinceStart = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24))
+  console.log('Dias do inicio do ciclo ' + daysSinceStart)
+  for (let i = 0; i < daysSinceStart; i++) {
+    const currentDate = new Date(startDate + i * 24 * 60 * 60 * 1000)
+    const dayOfWeek = currentDate
+      .toLocaleString('en-us', { weekday: 'long' })
+      .toLowerCase()
+    if (habit.weeklyFrequency.includes(dayOfWeek)) {
+      console.log('today')
+      occurrences++
+    }
+  }
+
+  return occurrences
+}
+
 interface HabitListProps {
   habits: Thabits[]
   setHabits: Dispatch<SetStateAction<Thabits[]>>
@@ -59,8 +84,6 @@ export function HabitList({ habits, setHabits }: HabitListProps) {
         console.log(
           habit.name + ' Today: ' + date + 'updatedAt: ' + habit.updatedAt,
         )
-        const updatedFrequency = weeksPassed(habit.createdAt)
-        const estimatedCompleted = updatedFrequency * habit.frequency
         const actualCompletedPercentage = habit.completed
         const hasUpdatedToday = habit.updatedAt === date
         return (
@@ -79,7 +102,7 @@ export function HabitList({ habits, setHabits }: HabitListProps) {
                 style={{ display: 'flex', flex: 1, flexDirection: 'column' }}
               >
                 <h3>{habit.name}</h3>
-                <h5>{habit.frequency} times per week</h5>
+                <h5>{habit.startDate} cycle start</h5>
               </div>
               <div>
                 <button
@@ -92,8 +115,10 @@ export function HabitList({ habits, setHabits }: HabitListProps) {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span>Should be {estimatedCompleted}% better</span>
                 <span>You are {actualCompletedPercentage}% better</span>
+                <span>
+                  You were supposed to be {countOccurrences(habit)}% better
+                </span>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={() => handleResetHabit(habit.id)}>
